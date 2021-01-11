@@ -24,7 +24,7 @@ def f(x):
     Returns
     -------
     ndarray
-        An array with the values of f(x), with f.
+        An array with the values of f(x).
 
     '''
     return digamma(.5 + (1/x)) + np.ln(x)
