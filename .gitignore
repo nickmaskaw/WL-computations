@@ -1,5 +1,7 @@
 # Data Folders
 input/
+output/
+jar/
 
 # Editors
 .vscode/
