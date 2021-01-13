@@ -54,7 +54,7 @@ def load_data_to_DF(folder):
         filename = file.split('.txt')[0]
         file_info = filename.split('__')[1:]
         data.attrs['sample'] = file_info[0]
-        data.attrs['Vg'] = int(file_info[1])
-        data.attrs['T'] = int(file_info[2])
+        data.attrs['Vg'] = float(file_info[1])
+        data.attrs['T'] = float(file_info[2])
         
         data.to_pickle(pkl_folder+'/'+filename+'.pkl')
