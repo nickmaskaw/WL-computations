@@ -80,7 +80,6 @@ def load_data_to_DF(folder):
         
 def split_data(folder, debug=False):
     
-    
     data_folder = 'jar/data/'+folder
     positive_B_folder = 'jar/positive_B/'+folder
     negative_B_folder = 'jar/negative_B/'+folder
@@ -106,11 +105,13 @@ def split_data(folder, debug=False):
         negative_B_data = data.iloc[:data_max_index, :].copy()
         positive_B_data = data.iloc[data_max_index+1:, :].copy()
         
+        # Let's store the value for the B0:
+        negative_B_data.attrs['B0'] = data.loc[:, 'B'][data_max_index]
+        positive_B_data.attrs['B0'] = data.loc[:, 'B'][data_max_index+1]
+        
         # Now, let's define B=0 at the position the data was splitted:
-        negative_B_data.loc[:, 'B'] = -(  negative_B_data.loc[:, 'B']
-                                        - data.loc[:, 'B'][data_max_index])
-        positive_B_data.loc[:, 'B'] =  (  positive_B_data.loc[:, 'B']
-                                        + data.loc[:, 'B'][data_max_index+1])
+        negative_B_data.loc[:, 'B'] = -(  negative_B_data.loc[:, 'B'] - negative_B_data.attrs['B0'])
+        positive_B_data.loc[:, 'B'] =  (  positive_B_data.loc[:, 'B'] - positive_B_data.attrs['B0'])
         
         # Finally, let's store the splitted data into the above defined folders:
         negative_B_data.to_pickle(negative_B_folder+'/'+file)
