@@ -5,10 +5,11 @@ Created on Tue Jan 12 09:55:54 2021
 @author: Nicolas Kawahala
 """
 
-#import numpy as np
+import wlfunctions as wl
+import numpy as np
 #import matplotlib.pyplot as plt
 import pandas as pd
-#from scipy.optimize import curve_fit as fit
+from scipy.optimize import curve_fit as fit
 import os
 
 sorting_key = lambda file: int(file.split('__')[0])
@@ -58,14 +59,14 @@ def load_data_to_DF(folder):
 
     '''
     
-    data_folder = 'input/'+folder
-    pkl_folder = 'jar/data/'+folder
+    data_folder = 'input/' + folder+'/'
+    pkl_folder = 'jar/' + folder + '/data/'
     make_folder(pkl_folder)
     
     file_list = os.listdir(data_folder)
     
     for file in file_list:
-        data = pd.read_csv(data_folder+'/'+file, sep='\t', header=None)
+        data = pd.read_csv(data_folder + file, sep='\t', header=None)
         data.columns = ['B', 's']
         
         filename = file.split('.txt')[0]
@@ -74,15 +75,15 @@ def load_data_to_DF(folder):
         data.attrs['Vg'] = float(file_info[1])
         data.attrs['T'] = float(file_info[2])
         
-        data.to_pickle(pkl_folder+'/'+filename+'.pkl')
+        data.to_pickle(pkl_folder + filename + '.pkl')
         
         
         
 def split_data(folder, debug=False):
     
-    data_folder = 'jar/data/'+folder
-    positive_B_folder = 'jar/positive_B/'+folder
-    negative_B_folder = 'jar/negative_B/'+folder
+    data_folder = 'jar/' + folder + '/data/'
+    positive_B_folder = 'jar/' + folder + '/positive_B/'
+    negative_B_folder = 'jar/' + folder + '/negative_B/'
     
     make_folder(positive_B_folder)
     make_folder(negative_B_folder)
@@ -93,9 +94,9 @@ def split_data(folder, debug=False):
     return_table = pd.DataFrame(columns=['file', 'inf idx', 'sup idx', 'avg idx'])
     
     for i, file in enumerate(file_list):
-        if debug: print('For loop currently at ' + file)
+        if debug: print('Currently splitting ' + file)
         
-        data = pd.read_pickle(data_folder+'/'+file)
+        data = pd.read_pickle(data_folder + file)
         
         # Data is configured to have it's max value exactly = 0, so:
         data_max = data.loc[data['s']==0]
@@ -114,22 +115,58 @@ def split_data(folder, debug=False):
         positive_B_data.loc[:, 'B'] =  (  positive_B_data.loc[:, 'B'] - positive_B_data.attrs['B0'])
         
         # Finally, let's store the splitted data into the above defined folders:
-        negative_B_data.to_pickle(negative_B_folder+'/'+file)
-        positive_B_data.to_pickle(positive_B_folder+'/'+file)
+        negative_B_data.to_pickle(negative_B_folder + file)
+        positive_B_data.to_pickle(positive_B_folder + file)
         
         # Let's update return_table:
         return_table.loc[i] = [file.split('.pkl')[0], data_max.index[0],
                                data_max.index[-1], data_max_index]
 
     return return_table
+
+
+def fit_data(data, ini):
+    try: 
+        popt, pcov = fit(wl.delta_sigma, data.B, data.s, p0=ini)
+        perr = np.sqrt(np.diag(pcov))
         
+        out = dict(zip(['Hf', 'Hso', 't', 'Hf_err', 'Hso_err', 't_err'], 
+                       np.concatenate((popt, perr))))
         
+    except:
+        out = dict(zip(['Hf', 'Hso', 't', 'Hf_err', 'Hso_err', 't_err'],
+                       np.full(6, None)))
+        
+    finally:
+        return out
+        
+    
+    
+    
+def fit_a_folder(folder, ini, mode):
+        
+    
+    if mode == 'negative':
+        data_folder = 'jar/' + folder + '/negative_B/'
+        pkl_folder = 'jar/' + folder + '/negative_B_fit/'
+    elif mode == 'positive':
+        data_folder = 'jar/' + folder + '/positive_B/'
+        pkl_folder = 'jar/' + folder + '/positive_B_fit/'
+    else:
+        print('Not a valid mode. Choose between \'negative\' or \'positive\'.')
+        return None
+    
+    make_folder(pkl_folder)
+    
+    file_list = sorted(os.listdir(data_folder), key=sorting_key)
+    return_table = pd.DataFrame(columns=['Vg', 'T', 'Hf', 'Hf_err', 'Hso', 
+                                         'Hso_err', 't', 't_err'])
+    
+    for i, file in enumerate(file_list):
+        data = pd.read_pickle(data_folder + file)
+        Vg, T = (data.attrs[n] for n in ['Vg', 'T'])
 
         
-    
-    
-    
-    
     
     
     
