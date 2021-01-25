@@ -129,11 +129,12 @@ def fit_data(data, ini):
     try: 
         popt, pcov = fit(wl.delta_sigma, data.B, data.s, p0=ini)
         perr = np.sqrt(np.diag(pcov))
-        
+    
         out = dict(zip(['Hf', 'Hso', 't', 'Hf_err', 'Hso_err', 't_err'], 
                        np.concatenate((popt, perr))))
         
     except:
+        print('Could not find the optimal parameters for ', data.attrs)
         out = dict(zip(['Hf', 'Hso', 't', 'Hf_err', 'Hso_err', 't_err'],
                        np.full(6, None)))
         
@@ -159,14 +160,20 @@ def fit_a_folder(folder, ini, mode):
     make_folder(pkl_folder)
     
     file_list = sorted(os.listdir(data_folder), key=sorting_key)
-    return_table = pd.DataFrame(columns=['Vg', 'T', 'Hf', 'Hf_err', 'Hso', 
-                                         'Hso_err', 't', 't_err'])
+    return_table = pd.DataFrame(columns=['Vg', 'T', 'Hf', 'Hso', 't', 'Hf_err',
+                                         'Hso_err', 't_err'])
     
     for i, file in enumerate(file_list):
-        data = pd.read_pickle(data_folder + file)
+        if mode == 'negative': data = pd.read_pickle(data_folder + file).iloc[:-2]
+        if mode == 'positive': data = pd.read_pickle(data_folder + file).iloc[3:]
         Vg, T = (data.attrs[n] for n in ['Vg', 'T'])
-
         
+        fit_params = fit_data(data, ini)
+        pd.DataFrame(fit_params, index=[0]).to_pickle(pkl_folder + file)
+        
+        return_table.loc[i] = [Vg, T] + [n for n in fit_params.values()]
+
+    return return_table
     
     
     
