@@ -147,33 +147,31 @@ def fit_data(data, ini):
 def fit_a_folder(folder, ini, mode):
         
     
+    pkl_folder = 'jar/' + folder + '/'
+    
     if mode == 'negative':
         data_folder = 'jar/' + folder + '/negative_B/'
-        pkl_folder = 'jar/' + folder + '/negative_B_fit/'
     elif mode == 'positive':
         data_folder = 'jar/' + folder + '/positive_B/'
-        pkl_folder = 'jar/' + folder + '/positive_B_fit/'
     else:
         print('Not a valid mode. Choose between \'negative\' or \'positive\'.')
         return None
     
-    make_folder(pkl_folder)
     
     file_list = sorted(os.listdir(data_folder), key=sorting_key)
-    return_table = pd.DataFrame(columns=['Vg', 'T', 'Hf', 'Hso', 't', 'Hf_err',
-                                         'Hso_err', 't_err'])
+    fit_params = pd.DataFrame(columns=['File', 'Vg', 'T', 'B0', 'Hf', 'Hso', 't',
+                                       'Hf_err', 'Hso_err', 't_err'])
     
     for i, file in enumerate(file_list):
         if mode == 'negative': data = pd.read_pickle(data_folder + file).iloc[:-2]
         if mode == 'positive': data = pd.read_pickle(data_folder + file).iloc[3:]
-        Vg, T = (data.attrs[n] for n in ['Vg', 'T'])
+        Vg, T, B0 = (data.attrs[n] for n in ['Vg', 'T', 'B0'])
         
-        fit_params = fit_data(data, ini)
-        pd.DataFrame(fit_params, index=[0]).to_pickle(pkl_folder + file)
-        
-        return_table.loc[i] = [Vg, T] + [n for n in fit_params.values()]
+        fit_results = fit_data(data, ini)        
+        fit_params.loc[i] = [i, Vg, T, B0] + [n for n in fit_results.values()]
 
-    return return_table
+    fit_params.to_pickle(pkl_folder + mode + '-fit_params.pkl')
+    return fit_params
     
     
     
