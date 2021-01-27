@@ -167,9 +167,7 @@ def fit_a_folder(folder, ini, mode):
         if mode == 'positive': data = pd.read_pickle(data_folder + file).iloc[3:]
         Vg, T = (data.attrs[n] for n in ['Vg', 'T'])
         
-        fit_results = fit_data(data, ini)
-        #pd.DataFrame(fit_params, index=[0]).to_pickle(pkl_folder + file)
-        
+        fit_results = fit_data(data, ini)        
         fit_params.loc[i] = [i, Vg, T] + [n for n in fit_results.values()]
 
     fit_params.to_pickle(pkl_folder + mode + '-fit_params.pkl')
