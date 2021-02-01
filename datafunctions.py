@@ -175,8 +175,51 @@ def fit_a_folder(folder, ini, mode):
     
     
     
+def save_to_csv(folder):
     
+    # Loading folders:
+    data_folder = 'jar/' + folder + '/data/'
+    negative_B_folder = 'jar/' + folder + '/negative_B/'
+    positive_B_folder = 'jar/' + folder + '/positive_B/'
+
+    # Saving folder:
+    csv_folder = 'csv/' + folder + '/'
+    make_folder(csv_folder)
     
+    n_opt = pd.read_pickle('jar/' + folder + '/negative-fit_params.pkl')
+    p_opt = pd.read_pickle('jar/' + folder + '/positive-fit_params.pkl')
     
+    file_list = sorted(os.listdir(data_folder), key=sorting_key)
+    for i, file in enumerate(file_list):
+        data = pd.read_pickle(data_folder + file)
+        n_data = pd.read_pickle(negative_B_folder + file)
+        p_data = pd.read_pickle(positive_B_folder + file)
+        
+        Vg, T, B0 = (n_opt.iloc[i][n] for n in ['Vg', 'T', 'B0'])
+        Hfn, Hson, tn = (n_opt.iloc[i][n] for n in ['Hf', 'Hso', 't'])
+        Hfp, Hsop, tp = (p_opt.iloc[i][n] for n in ['Hf', 'Hso', 't'])
+    
+        s_data = data.copy()
+        s_data.B = s_data.B - B0
+        n_fit = wl.delta_sigma(n_data.B, Hfn, Hson, tn)
+        p_fit = wl.delta_sigma(p_data.B, Hfp, Hsop, tp)
+        
+        out = pd.DataFrame({'B': s_data.B, 's': s_data.s,
+                            'B_fit_n': n_data.B, 's_fit_n': n_fit,
+                            'B_fit_p': p_data.B, 's_fit_p': p_fit})
+
+        file_name = '{}__{}__{}Vg__{}T.txt'.format(i, folder, Vg, T)
+        out.to_csv(csv_folder+file_name, sep='\t', decimal=',')
+    
+    n_fit_params = n_opt.copy()
+    p_fit_params = p_opt.copy()
+    
+    cols = ['Vg', 'T', 'B0', 'Hf', 'Hf_err', 'Hso', 'Hso_err', 't', 't_err']
+    n_fit_params[cols].to_csv(csv_folder + folder + '__negative-fit-params.txt',
+                              sep='\t', decimal=',')
+    p_fit_params[cols].to_csv(csv_folder + folder + '__positive-fit-params.txt',
+                              sep='\t', decimal=',')
+    
+    return None
     
     
