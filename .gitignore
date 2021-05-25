@@ -1,3 +1,5 @@
+*.ipynb
+
 # Data Folders
 input/
 output/

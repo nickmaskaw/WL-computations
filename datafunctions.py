@@ -125,11 +125,21 @@ def split_data(folder, debug=False):
     return return_table
 
 
-def fit_data(data, ini):
-    try: 
-        popt, pcov = fit(wl.delta_sigma, data.B, data.s, p0=ini)
-        perr = np.sqrt(np.diag(pcov))
+def fit_data(data, ini, t=None):
+    if t:
+        func = lambda B, Hf, Hso: wl.delta_sigma(B, Hf, Hso, t)
+        ini = ini[:2]
+    else:
+        func = wl.delta_sigma
     
+    try: 
+        popt, pcov = fit(func, data.B, data.s, p0=ini)
+        perr = np.sqrt(np.diag(pcov))
+        
+        if t:
+            popt.append(t)
+            perr.append(0)
+            
         out = dict(zip(['Hf', 'Hso', 't', 'Hf_err', 'Hso_err', 't_err'], 
                        np.concatenate((popt, perr))))
         
@@ -144,7 +154,7 @@ def fit_data(data, ini):
     
     
     
-def fit_a_folder(folder, ini, mode):
+def fit_a_folder(folder, ini, mode, t=None):
         
     
     pkl_folder = 'jar/' + folder + '/'
@@ -167,7 +177,7 @@ def fit_a_folder(folder, ini, mode):
         if mode == 'positive': data = pd.read_pickle(data_folder + file).iloc[3:]
         Vg, T, B0 = (data.attrs[n] for n in ['Vg', 'T', 'B0'])
         
-        fit_results = fit_data(data, ini)        
+        fit_results = fit_data(data, ini, t)        
         fit_params.loc[i] = [i, Vg, T, B0] + [n for n in fit_results.values()]
 
     fit_params.to_pickle(pkl_folder + mode + '-fit_params.pkl')
